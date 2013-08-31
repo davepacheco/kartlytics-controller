@@ -40,3 +40,7 @@ input[type=button] {
 	font-size: large;
 	margin-right: 10px;
 }
+
+.kStatusBox {
+	margin: 20px;
+}
