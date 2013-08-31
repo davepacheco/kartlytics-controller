@@ -1,0 +1,49 @@
+<html>
+<head>
+<title>Kartlytics Recorder</title>
+<link rel="stylesheet" type="text/css" href="recorder.css" />
+<script type="text/javascript" src="jquery-2.0.3.min.js"></script>
+<script type="text/javascript" src="recorder.js"></script>
+</head>
+<body>
+
+<h2>Kartlytics recorder</h2>
+
+<!-- XXX add options for 150cc, etc. and # of players -->
+
+<table class="kFormTable">
+<tr>
+  <th>Player</th>
+  <th>Handle<br />(for public website)</th>
+  <th>Email<br />(private)</th>
+</tr>
+<tr>
+  <td>Player 1</td>
+  <td><input type="text" size="30" id="p1handle"/></td>
+  <td><input type="text" size="30" id="p1email"/></td>
+</tr>
+<tr>
+  <td>Player 2</td>
+  <td><input type="text" size="30" id="p2handle"/></td>
+  <td><input type="text" size="30" id="p2email"/></td>
+</tr>
+<tr>
+  <td>Player 3</td>
+  <td><input type="text" size="30" id="p3handle"/></td>
+  <td><input type="text" size="30" id="p3email"/></td>
+</tr>
+<tr>
+  <td>Player 4</td>
+  <td><input type="text" size="30" id="p4handle"/></td>
+  <td><input type="text" size="30" id="p4email"/></td>
+</tr>
+</table>
+
+<div class="kButtons">
+  <input type="button" id="kButtonClear" onclick="kReset()" value="Clear"/>
+  <input type="button" id="kButtonStop" onclick="kStop()" value="Force stop"/>
+  <input type="button" id="kButtonStart" onclick="kStart()" value="Start recording"/>
+</div>
+
+</body>
+</html>

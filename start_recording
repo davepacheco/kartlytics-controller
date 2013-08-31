@@ -1,0 +1,10 @@
+#!/usr/bin/osascript
+
+on run argv
+    set p to ((item 1 of argv) as string)
+    set f to (POSIX file p)
+    tell application "iGrabber Capture"
+	open window "iGrabber"
+        start recording window "iGrabber" as f
+    end tell
+end run

@@ -1,0 +1,42 @@
+body {
+	margin-left: 50px;
+	margin-top: 20px;
+	font-family: sans-serif;
+}
+
+table th,
+table td {
+	padding-left: 20px;
+	padding-right: 20px;
+	white-space: nowrap;
+}
+
+div.kButtons {
+	margin-left: 50px;
+	padding-top: 15px;
+	white-space: nowrap;
+}
+
+#kButtonStart {
+	background-color: #00cc00;
+}
+
+#kButtonStop {
+	background-color: #cc0000;
+}
+
+#kButtonClear {
+	background-color: #ffffff;
+}
+
+input[type=text] {
+	font-size: large;
+}
+
+input[type=button] {
+	height: 40px;
+	padding-left: 20px;
+	padding-right: 20px;
+	font-size: large;
+	margin-right: 10px;
+}

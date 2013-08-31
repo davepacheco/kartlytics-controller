@@ -1,0 +1,5 @@
+#!/usr/bin/osascript
+
+tell application "iGrabber Capture"
+    stop recording window "iGrabber"
+end tell
