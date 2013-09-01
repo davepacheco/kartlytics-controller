@@ -7,6 +7,7 @@
  *   - add better feedback around current state and allowable button clicks
  *   - improve styling of the buttons
  *   - provide error feedback
+ *   - add log of recent events?
  * server:
  *   - remaining states that are hard to detect or get out of:
  *     - "stuck" state resulting from two "stops"
@@ -14,7 +15,6 @@
  *       state)
  *   - make it bulletproof w.r.t. all possible states
  *   - trigger upload (at most once)
- *   - add ability to serve index.htm and related files?
  */
 
 var mod_child = require('child_process');
@@ -71,6 +71,11 @@ function main()
 	server.opts('/stop', cmnHeaders, cors);
 	server.opts('/state', cmnHeaders, cors);
 	server.get('/state', cmnHeaders, getState, state);
+	server.get('/', cmnHeaders, function (req, res, next) {
+		res.header('Location', '/www/index.htm');
+		res.send(302);
+	});
+	server.get('/www/:file', cmnHeaders, getFile);
 	server.post('/stop', cmnHeaders, lock, getState, stop, getState, state);
 	server.post('/start', mod_restify.bodyParser({ 'mapParams': false }),
 	    cmnHeaders, lock, getState, start, getState, state);
@@ -98,6 +103,29 @@ function cmnHeaders(req, res, next)
 	for (var h in dflHeaders)
 		res.header(h, dflHeaders[h]);
 	next();
+}
+
+function getFile(req, res, next)
+{
+	var file = req.params['file'];
+	if (!/^[^.][a-zA-Z0-9\.]+$/.test(file)) {
+		next(new mod_restify.ResourceNotFoundError());
+		return;
+	}
+
+	var stream = mod_fs.createReadStream(mod_path.join('www', file));
+	stream.on('error', function (err) {
+		if (err['code'] != 'ENOENT')
+			next(err);
+		else
+			next(new mod_restify.ResourceNotFoundError());
+	});
+	stream.on('open', function () {
+		if (/\.htm$/.test(file))
+			res.header('content-type', 'text/html');
+		res.writeHead(200);
+		stream.pipe(res);
+	});
 }
 
 function cors(req, res, next)
@@ -174,7 +202,7 @@ function doStart(req, res, next)
 
 	mod_fs.writeFileSync(rawjsonfilename, JSON.stringify(req.body));
 	mod_fs.writeFileSync(jsonfilename, JSON.stringify(translated));
-	doCmd('./start_recording ' + filename, function (err) {
+	doCmd('./bin/start_recording ' + filename, function (err) {
 		if (err) {
 			next(err);
 			return;
@@ -229,7 +257,7 @@ function stop(req, res, next)
 		return;
 	}
 
-	doCmd('./stop_recording', function (err) {
+	doCmd('./bin/stop_recording', function (err) {
 		if (err) {
 			next(err);
 			return;
@@ -283,7 +311,7 @@ function doFetchState()
 		st.forEach(function (s) { s(err, newstate); });
 	};
 
-	doCmd('./get_state', function (err, stdout) {
+	doCmd('./bin/get_state', function (err, stdout) {
 		if (err) {
 			ondone(err);
 			return;
