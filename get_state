@@ -1,0 +1,33 @@
+#!/usr/bin/osascript
+
+set x to ""
+
+tell application "System Events"
+	repeat with proc in (processes whose name is "iGrabber Capture")
+		set pid to proc's unix id as string
+		set x to x & (pid & ":
+")
+		set x to x & ("   name: " & name of proc & "
+")
+		try
+			repeat with i from 1 to number of windows in proc
+				set ww to window i in proc
+				-- set wn to name of window i in proc
+				-- set x to x & ("      " & i & ": " & wn & "
+				
+				set x to x & ("      " & i & "
+")
+				repeat with j from 1 to number of UI elements in ww
+					set elem to (UI element j) in ww
+					set x to x & ("    elem #" & j & ":
+")
+					set y to value of elem as string
+					set x to x & ("     value: " & y & "
+")
+				end repeat
+			end repeat
+		end try
+		set x to x & ("
+")
+	end repeat
+end tell

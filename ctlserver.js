@@ -6,15 +6,12 @@
  *   - add option to make email required
  *   - add better feedback around current state and allowable button clicks
  *   - improve styling of the buttons
+ *   - provide error feedback
  * server:
  *   - add logic to detect and get out of "stuck" state
- *   - propagate state changes more quickly to client
- *     (e.g., run getState again after start/stop and return the result)
- *   - add logic to protect against invalid state changes (e.g., stop when
- *     already stopped should do nothing)
+ *   - stop when already stopped should do nothing
  *   - add logic to have "start" automatically "stop" first
  *   - make it bulletproof w.r.t. all possible states
- *   - add lock/unlock around whole start/stop request
  *   - add move-to-upload-directory and trigger upload (at most once)
  */
 
@@ -31,8 +28,7 @@ var log = new mod_bunyan({
     'level': process.env['LOG_LEVEL'] || 'debug'
 });
 var port = 8313;
-var pending = false;
-var recording = false;
+var locked = false;
 var filebase = '/Users/dap/Desktop/KartPending/video-';
 var bounds = 0;
 var dflHeaders = {
@@ -54,11 +50,10 @@ function main()
 	server.opts('/stop', cmnHeaders, cors);
 	server.opts('/state', cmnHeaders, cors);
 	server.get('/state', cmnHeaders, getState, state);
-	server.post('/stop', cmnHeaders, getState, stop);
-	server.post('/start', 
-	    cmnHeaders,
-	    mod_restify.bodyParser({ 'mapParams': false }),
-	    getState, start);
+	server.post('/stop', cmnHeaders, lock, getState, stop, getState, state);
+	server.post('/start', mod_restify.bodyParser({ 'mapParams': false }),
+	    cmnHeaders, lock, getState, start, getState, state);
+	server.on('after', unlock);
 	server.on('after', function (req, res) {
 		log.info({
 		    'method': req.method,
@@ -69,9 +64,8 @@ function main()
 	server.listen(port, '127.0.0.1', function () {
 		log.info('server listening on port', port);
 	});
-	server.on('uncaughtException', function (_, _, _, err) {
-		throw (err);
-	});
+	server.on('uncaughtException',
+	    function (_, _, _, err) { throw (err); });
 }
 
 function cmnHeaders(req, res, next)
@@ -98,7 +92,6 @@ function getState(req, res, next)
 		next(err);
 	};
 
-	log.debug('statepending length = ', statepending.length);
 	statepending.push(onstate);
 	if (statepending.length == 1)
 		doFetchState();
@@ -110,47 +103,59 @@ function state(req, res, next)
 	next();
 }
 
-function start(req, res, next)
+function lock(req, res, next)
 {
-	var filename = filebase + process.pid + '-' + (bounds++) + '.mov';
-
-	if (pending) {
-		callback(new Error('operation already pending'));
+	if (locked) {
+		next(new Error('operation already pending'));
 		return;
 	}
 
-	pending = true;
+	locked = true;
+	req.locked = true;
+	next();
+}
+
+function unlock(req, res, next)
+{
+	if (req.locked) {
+		req.locked = false;
+		locked = false;
+	}
+}
+
+function start(req, res, next)
+{
+	if (req.igState != 'idle') {
+		next(new Error('already recording'));
+		return;
+	}
+
+	var filename = filebase + process.pid + '-' + (bounds++) + '.mov';
+
 	mod_fs.writeFileSync(filename + '.json', JSON.stringify(req.body));
 	doCmd(log, './start_recording ' + filename, function (err) {
-		pending = false;
 		if (err) {
 			next(err);
 			return;
 		}
 
-		recording = true;
-		res.send(200, { 'ok': true });
 		next();
 	});
 }
 
 function stop(req, res, next)
 {
-	if (pending) {
-		callback(new Error('operation already pending'));
+	if (req.igState != 'recording') {
+		next(new Error('not recording'));
 		return;
 	}
 
-	pending = true;
 	doCmd(log, './stop_recording', function (err) {
-		pending = false;
 		if (err) {
 			next(err);
 			return;
 		}
 
-		res.send(200, { 'ok': true });
-		recording = false;
 		next();
 	});
 }

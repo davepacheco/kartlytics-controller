@@ -6,11 +6,14 @@ window.onload = kRefreshState;
 
 function kRefreshState()
 {
-	makeRequest('get', '/state', null, function (err, data) {
-		if (!err)
-			$('#kStatus').text(data);
+	makeRequest('get', '/state', null, function () {
 		setTimeout(kRefreshState, tickInterval);
 	});
+}
+
+function kLoadState(data)
+{
+	$('#kStatus').text(data);
 }
 
 function kReset()
@@ -38,8 +41,9 @@ function makeRequest(method, path, args, callback)
 	    'method': method,
 	    'dataType': 'json',
 	    'success': function (data) {
+		kLoadState(data);
 		if (callback)
-			callback(null, data);
+			callback();
 	    },
 	    'error': function (data) {
 		console.error('failed request: ', path, data);
