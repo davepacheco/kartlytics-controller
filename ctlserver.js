@@ -9,9 +9,8 @@
  *   - provide error feedback
  * server:
  *   - add logic to detect and get out of "stuck" state
- *   - stop when already stopped should do nothing
- *   - add logic to have "start" automatically "stop" first
  *   - make it bulletproof w.r.t. all possible states
+ *   - format JSON the way kartlytics expects
  *   - add move-to-upload-directory and trigger upload (at most once)
  */
 
@@ -89,6 +88,8 @@ function getState(req, res, next)
 {
 	var onstate = function (err, state) {
 		req.igState = state;
+		if (!err && state == 'stuck')
+			err = new Error('state is "stuck"');
 		next(err);
 	};
 
@@ -125,13 +126,24 @@ function unlock(req, res, next)
 
 function start(req, res, next)
 {
-	if (req.igState != 'idle') {
-		next(new Error('already recording'));
+	if (req.igState == 'idle') {
+		doStart(req, res, next);
 		return;
 	}
 
-	var filename = filebase + process.pid + '-' + (bounds++) + '.mov';
+	stop(req, res, function (err) {
+		if (err) {
+			next(err);
+			return;
+		}
 
+		doStart(req, res, next);
+	});
+}
+
+function doStart(req, res, next)
+{
+	var filename = filebase + process.pid + '-' + (bounds++) + '.mov';
 	mod_fs.writeFileSync(filename + '.json', JSON.stringify(req.body));
 	doCmd(log, './start_recording ' + filename, function (err) {
 		if (err) {
@@ -146,7 +158,7 @@ function start(req, res, next)
 function stop(req, res, next)
 {
 	if (req.igState != 'recording') {
-		next(new Error('not recording'));
+		next();
 		return;
 	}
 

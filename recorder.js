@@ -46,9 +46,14 @@ function makeRequest(method, path, args, callback)
 			callback();
 	    },
 	    'error': function (data) {
-		console.error('failed request: ', path, data);
-		if (callback)
-			callback(new Error('failed'));
+		var msg;
+		try { msg = JSON.parse(data['responseText']); } catch (ex) {}
+		if (msg && msg['message'] == 'state is "stuck"')
+		    	kLoadState('stuck');
+		else
+			console.error('failed request: ', path, data);
+			if (callback)
+				callback(new Error('failed'));
 	    }
 	};
 
