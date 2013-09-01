@@ -8,40 +8,62 @@
  *   - improve styling of the buttons
  *   - provide error feedback
  * server:
- *   - add logic to detect and get out of "stuck" state
+ *   - remaining states that are hard to detect or get out of:
+ *     - "stuck" state resulting from two "stops"
+ *     - iGrabber not open at all (start/stop opens it in a non-functional
+ *       state)
  *   - make it bulletproof w.r.t. all possible states
- *   - format JSON the way kartlytics expects
- *   - add move-to-upload-directory and trigger upload (at most once)
+ *   - trigger upload (at most once)
+ *   - add ability to serve index.htm and related files?
  */
 
 var mod_child = require('child_process');
 var mod_http = require('http');
 var mod_fs = require('fs');
+var mod_path = require('path');
 var mod_util = require('util');
 
 var mod_bunyan = require('bunyan');
+var mod_mkdirp = require('mkdirp');
 var mod_restify = require('restify');
 
-var log = new mod_bunyan({
-    'name': 'kartctl',
-    'level': process.env['LOG_LEVEL'] || 'debug'
-});
+/*
+ * Configuration
+ */
+var base = mod_path.join(process.env['HOME'], 'Desktop/KartPending');
+var tmpdir = mod_path.join(base, 'incoming');
+var finaldir = mod_path.join(base, 'upload');
 var port = 8313;
+
+/*
+ * Global state
+ */
+var startTime = new Date();
 var locked = false;
-var filebase = '/Users/dap/Desktop/KartPending/video-';
 var bounds = 0;
+var statepending = [];
 var dflHeaders = {
     'access-control-allow-origin': '*',
     'access-control-allow-methods': 'GET,POST,OPTIONS,HEAD',
     'access-control-allow-headers': 'content-type',
     'content-type': 'application/json'
 };
-var statepending = [];
-var server;
+var currentFile, log, server;
 
 function main()
 {
 	process.chdir(__dirname);
+
+	log = new mod_bunyan({
+	    'name': 'kartctl',
+	    'level': process.env['LOG_LEVEL'] || 'debug'
+	});
+
+	log.info('server starting');
+	log.debug('creating directory "%s"', tmpdir);
+	mod_mkdirp.sync(tmpdir);
+	log.debug('creating directory "%s"', finaldir);
+	mod_mkdirp.sync(finaldir);
 
 	server = mod_restify.createServer();
 
@@ -64,7 +86,7 @@ function main()
 		log.info('server listening on port', port);
 	});
 	server.on('uncaughtException',
-	    function (_, _, _, err) { throw (err); });
+	    function (_1, _2, _3, err) { throw (err); });
 }
 
 function cmnHeaders(req, res, next)
@@ -86,9 +108,9 @@ function cors(req, res, next)
 
 function getState(req, res, next)
 {
-	var onstate = function (err, state) {
-		req.igState = state;
-		if (!err && state == 'stuck')
+	var onstate = function (err, newstate) {
+		req.igState = newstate;
+		if (!err && newstate == 'stuck')
 			err = new Error('state is "stuck"');
 		next(err);
 	};
@@ -143,15 +165,60 @@ function start(req, res, next)
 
 function doStart(req, res, next)
 {
-	var filename = filebase + process.pid + '-' + (bounds++) + '.mov';
-	mod_fs.writeFileSync(filename + '.json', JSON.stringify(req.body));
-	doCmd(log, './start_recording ' + filename, function (err) {
+	var filebase = 'video-' + startTime.getTime() + '-' +
+	    (bounds++) + '.mov';
+	var filename = mod_path.join(tmpdir, filebase);
+	var jsonfilename = mod_path.join(finaldir, filebase + '.json');
+	var rawjsonfilename = mod_path.join(finaldir, filebase + '.raw.json');
+	var translated = prepareJson(filebase, req.body);
+
+	mod_fs.writeFileSync(rawjsonfilename, JSON.stringify(req.body));
+	mod_fs.writeFileSync(jsonfilename, JSON.stringify(translated));
+	doCmd('./start_recording ' + filename, function (err) {
 		if (err) {
 			next(err);
 			return;
 		}
 
+		currentFile = filebase;
 		next();
+	});
+}
+
+function prepareJson(filebase, input)
+{
+	var id, i, time;
+
+	/*
+	 * This is the same algorithm node-formidable uses, which is how ids
+	 * were constructed for the first year's worth of kartlytics videos.
+	 */
+	id = '';
+	for (i = 0; i < 32; i++)
+		id += Math.floor(Math.random() * 16).toString(16);
+
+	/*
+	 * XXX we should really get this from the video metadata after it's
+	 * created.
+	 */
+	time = new Date();
+	return ({
+	    'id': id,
+	    'crtime': time.getTime(),
+	    'name': filebase,
+	    'uploaded': time.toISOString(),
+	    'lastUpdated': time.toISOString(),
+	    'metadata': {
+		'races': [ {
+		    'level': input['level'] || 'unknown',
+		    'people': [
+			input['p1handle'] || 'anon',
+			input['p2handle'] || 'anon',
+			input['p3handle'] || 'anon',
+			input['p4handle'] || 'anon'
+		    ]
+		} ]
+	    }
 	});
 }
 
@@ -162,17 +229,31 @@ function stop(req, res, next)
 		return;
 	}
 
-	doCmd(log, './stop_recording', function (err) {
+	doCmd('./stop_recording', function (err) {
 		if (err) {
 			next(err);
 			return;
+		}
+
+		if (currentFile !== undefined) {
+			var src = mod_path.join(tmpdir, currentFile);
+			var dst = mod_path.join(finaldir, currentFile);
+			currentFile = undefined;
+			log.info('renaming "%s" to "%s"');
+			/* XXX trigger at most one upload-all? */
+			try {
+				mod_fs.renameSync(src, dst);
+			} catch (ex) {
+				log.error(ex, 'error renaming "%s" to "%s"',
+				    src, dst);
+			}
 		}
 
 		next();
 	});
 }
 
-function doCmd(log, program, callback)
+function doCmd(program, callback)
 {
 	log.debug('running program ', JSON.stringify(program));
 	mod_child.exec(program, function (error, stdout, stderr) {
@@ -194,15 +275,15 @@ function doCmd(log, program, callback)
 
 function doFetchState()
 {
-	var ondone = function (err, state) {
+	var ondone = function (err, newstate) {
 		if (!err)
-			log.debug('current state =', state);
+			log.debug('current state =', newstate);
 		var st = statepending;
 		statepending = [];
-		st.forEach(function (s) { s(err, state); });
+		st.forEach(function (s) { s(err, newstate); });
 	};
 
-	doCmd(log, './get_state', function (err, stdout) {
+	doCmd('./get_state', function (err, stdout) {
 		if (err) {
 			ondone(err);
 			return;

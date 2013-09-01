@@ -49,7 +49,7 @@ function makeRequest(method, path, args, callback)
 		var msg;
 		try { msg = JSON.parse(data['responseText']); } catch (ex) {}
 		if (msg && msg['message'] == 'state is "stuck"')
-		    	kLoadState('stuck');
+			kLoadState('stuck');
 		else
 			console.error('failed request: ', path, data);
 			if (callback)
