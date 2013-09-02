@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [[ $# -ne 2 ]]; then
+	echo "save_video: expected two arguments" >&2
+	exit 1
+fi
+
+ffmpeg -i "$1" -b:v 2584k -g 5 "$1.small.mov" && \
+    rm -f "$1" && mv "$1.small.mov" "$2"

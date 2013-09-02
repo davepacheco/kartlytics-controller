@@ -26,6 +26,7 @@ var mod_util = require('util');
 var mod_bunyan = require('bunyan');
 var mod_mkdirp = require('mkdirp');
 var mod_restify = require('restify');
+var mod_vasync = require('vasync');
 
 /*
  * Configuration
@@ -108,7 +109,7 @@ function cmnHeaders(req, res, next)
 function getFile(req, res, next)
 {
 	var file = req.params['file'];
-	if (!/^[^.][a-zA-Z0-9\.]+$/.test(file)) {
+	if (!/^[^.][a-zA-Z0-9\.-]+$/.test(file)) {
 		next(new mod_restify.ResourceNotFoundError());
 		return;
 	}
@@ -252,33 +253,42 @@ function prepareJson(filebase, input)
 
 function stop(req, res, next)
 {
+	var orig, fin;
+
 	if (req.igState != 'recording') {
 		next();
 		return;
 	}
 
-	doCmd('./bin/stop_recording', function (err) {
-		if (err) {
-			next(err);
-			return;
-		}
+	orig = mod_path.join(tmpdir, currentFile);
+	fin = mod_path.join(finaldir, currentFile);
 
-		if (currentFile !== undefined) {
-			var src = mod_path.join(tmpdir, currentFile);
-			var dst = mod_path.join(finaldir, currentFile);
+	mod_vasync.pipeline({
+	    'funcs': [
+		function (_, callback) {
+			doCmd('./bin/stop_recording', callback);
+		},
+		function (_, callback) {
+			callback();
+			if (currentFile === undefined)
+				return;
+
 			currentFile = undefined;
-			log.info('renaming "%s" to "%s"');
-			/* XXX trigger at most one upload-all? */
-			try {
-				mod_fs.renameSync(src, dst);
-			} catch (ex) {
-				log.error(ex, 'error renaming "%s" to "%s"',
-				    src, dst);
-			}
+			log.debug('compressing final video');
+			mod_child.exec('./bin/save_video "' +
+			    orig + '" "' + fin + '"',
+			    function (err, stdout, stderr) {
+				if (err)
+					log.error(err, 'save_video failed ' +
+					    '(stdout = "%s", stderr = "%s")',
+					    stdout, stderr);
+				else
+					log.info('video successfully processed',
+					    mod_path.basename(fin));
+			    });
 		}
-
-		next();
-	});
+	    ]
+	}, next);
 }
 
 function doCmd(program, callback)
