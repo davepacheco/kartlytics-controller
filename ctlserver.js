@@ -23,7 +23,7 @@ var mod_vasync = require('vasync');
 /*
  * Configuration
  */
-var base = mod_path.join(process.env['HOME'], 'Desktop/KartPending');
+var base = mod_path.join(process.env['HOME'], 'Desktop/Kart/data');
 var tmpdir = mod_path.join(base, 'incoming');
 var finaldir = mod_path.join(base, 'upload');
 var rawdir = mod_path.join(base, 'raw');

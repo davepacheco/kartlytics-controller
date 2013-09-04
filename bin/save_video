@@ -1,9 +1,11 @@
-#!/bin/bash
+#!/bin/ksh
+
+dir="$(dirname $(whence $0))"
 
 if [[ $# -ne 2 ]]; then
 	echo "save_video: expected two arguments" >&2
 	exit 1
 fi
 
-ffmpeg -i "$1" -b:v 3584k -g 5 -strict -2 "$1.small.mov" && \
+"$dir/ffmpeg" -i "$1" -b:v 3584k -g 5 -strict -2 "$1.small.mov" && \
     rm -f "$1" && mv "$1.small.mov" "$2"
