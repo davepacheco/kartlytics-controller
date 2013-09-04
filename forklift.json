@@ -1,0 +1,15 @@
+{
+	"local_dir": "/Users/dap/Desktop/KartPending/upload",
+	"manta_dir": "/manta/public/kartlytics-test",
+	"match_filenames": [
+		".*\\.mov.json$",
+		".*\\.mov"
+	],
+	"manta": {
+		"url": "https://us-east.manta.joyent.com",
+		"user": "manta",
+		"key_id": "0d:5e:e8:a5:f0:ff:80:5a:04:3c:77:2d:94:88:53:b2",
+		"key_file": "../../id_rsa_kart"
+	},
+	"lockport": 12372
+}

@@ -27,6 +27,7 @@ var mod_vasync = require('vasync');
 var base = mod_path.join(process.env['HOME'], 'Desktop/KartPending');
 var tmpdir = mod_path.join(base, 'incoming');
 var finaldir = mod_path.join(base, 'upload');
+var rawdir = mod_path.join(base, 'raw');
 var port = 8313;
 var ulogevents = [];
 
@@ -59,6 +60,8 @@ function main()
 	mod_mkdirp.sync(tmpdir);
 	log.debug('creating directory "%s"', finaldir);
 	mod_mkdirp.sync(finaldir);
+	log.debug('creating directory "%s"', rawdir);
+	mod_mkdirp.sync(rawdir);
 
 	server = mod_restify.createServer();
 
@@ -193,7 +196,7 @@ function doStart(req, res, next)
 	    (bounds++) + '.mov';
 	var filename = mod_path.join(tmpdir, filebase);
 	var jsonfilename = mod_path.join(finaldir, filebase + '.json');
-	var rawjsonfilename = mod_path.join(finaldir, filebase + '.raw.json');
+	var rawjsonfilename = mod_path.join(rawdir, filebase + '.raw.json');
 	var translated = prepareJson(filebase, req.body);
 
 	mod_fs.writeFileSync(rawjsonfilename, JSON.stringify(req.body));

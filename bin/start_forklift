@@ -1,0 +1,4 @@
+#!/bin/bash
+
+node ./node_modules/manta-forklift/forklift.js ./forklift.json 2>&1 | \
+    tee -a forklift.out
