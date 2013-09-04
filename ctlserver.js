@@ -1,12 +1,11 @@
 /*
  * XXX TODO
- * web page:
- *   - add option for CC level
- *   - add option for # of players?
  * server:
  *   - add "bus reset" option
- *   - figure out how to detect and recover from state where iGrabber is not
- *     really open
+ *   - figure out how to deal with iGrabber not being open:
+ *     - when it's not open at all, open it in the "right" way
+ *     - detect and recover from accidentally opening it in its non-functional
+ *       state?
  *   - make it bulletproof w.r.t. all possible states
  *   - trigger upload (at most once)
  */
@@ -213,7 +212,7 @@ function doStart(req, res, next)
 
 function prepareJson(filebase, input)
 {
-	var id, i, time;
+	var id, i, time, players;
 
 	/*
 	 * This is the same algorithm node-formidable uses, which is how ids
@@ -224,10 +223,18 @@ function prepareJson(filebase, input)
 		id += Math.floor(Math.random() * 16).toString(16);
 
 	/*
-	 * XXX we should really get this from the video metadata after it's
-	 * created.
+	 * XXX We should really get crtime from the video file metadata.
 	 */
 	time = new Date();
+	players = [
+	    input['p1handle'] || 'anon',
+	    input['p2handle'] || 'anon',
+	    input['p3handle'] || 'anon'
+	];
+
+	if (input['nplayers'] == 4)
+		players.push(input['p4handle'] || 'anon');
+
 	return ({
 	    'id': id,
 	    'crtime': time.getTime(),
@@ -237,12 +244,7 @@ function prepareJson(filebase, input)
 	    'metadata': {
 		'races': [ {
 		    'level': input['level'] || 'unknown',
-		    'people': [
-			input['p1handle'] || 'anon',
-			input['p2handle'] || 'anon',
-			input['p3handle'] || 'anon',
-			input['p4handle'] || 'anon'
-		    ]
+		    'people': players
 		} ]
 	    }
 	});

@@ -9,9 +9,35 @@
 
 <h2>Kartlytics recorder</h2>
 
-<!-- XXX add options for 150cc, etc. and # of players? -->
+<table class="kGameInfo">
+<tr>
+    <td class="kFormLabel">Type of game</td>
+    <td class="kFormValue">
+    	<input id="50cc" type="radio" name="level" value="50cc" />
+	<label for="50cc">50cc VS</label>
+    	<input id="100cc" type="radio" name="level" value="100cc" />
+	<label for="100cc">100cc VS</label>
+    	<input id="150cc" type="radio" name="level" value="150cc" />
+	<label for="150cc">150cc VS</label>
+    	<input id="unknown" type="radio" name="level" value="unknown"
+	    checked="checked" />
+	<label for="unknown">Don't know</label><br />
+	<span class="kNote">"150cc VS" is preferred. "Extra" and Battle modes not yet supported.</span>
+    </td>
+</tr>
+<tr>
+    <td class="kFormLabel">Number of players</td>
+    <td class="kFormValue">
+    	<input id="np3" type="radio" name="np" value="np3" onchange="kNpChanged();"/>
+	<label for="np3">3 players</label>
+    	<input id="np4" type="radio" name="np" value="np4" checked="checked" onchange="kNpChanged();" />
+	<label for="np4">4 players</label>
+	<span class="kNote">Only 3-player and 4-player games are supported.</span>
+    </td>
+</tr>
+</table>
 
-<table class="kFormTable">
+<table>
 <tr>
   <th>Player</th>
   <th>Handle<br />(for public website)</th>

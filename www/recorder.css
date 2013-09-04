@@ -4,6 +4,33 @@ body {
 	font-family: sans-serif;
 }
 
+table.kGameInfo {
+	margin-bottom: 25px;
+}
+
+table.kGameInfo td {
+	vertical-align: top;
+}
+
+label {
+	margin-right: 20px;
+}
+
+td.kFormLabel,
+td.kFormValue {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+td.kFormLabel {
+	font-weight: bold;
+}
+
+span.kNote {
+	font-size: small;
+	font-style: italic;
+}
+
 table th,
 table td {
 	padding-left: 20px;

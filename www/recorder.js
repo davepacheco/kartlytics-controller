@@ -69,17 +69,26 @@ function kStop()
 
 function kStart()
 {
-	var obj = {};
-	var msg;
+	var obj, npl, msg;
+
+	obj = {};
 	$('input[type=text]').each(
 	    function (_, e) { obj[e.id] = $(e).val(); });
 
+	npl = $('#np3')[0].checked ? 3 : 4;
+	obj['nplayers'] = npl;
+
+	obj['level'] =
+	    $('#50cc')[0].checked ? '50cc' :
+	    $('#100cc')[0].checked ? '100cc' :
+	    $('#150cc')[0].checked ? '150cc' : 'unknown';
+
 	if (!obj['p1handle'] || !obj['p2handle'] || !obj['p3handle'] ||
-	    (obj['p4email'] && !obj['p4handle']))
+	    (npl == 4 && !obj['p4handle']))
 		msg = 'Handles are required.  (Use "anon" for anonymous.)';
 	else if (kEmailRequired &&
 	    (!obj['p1email'] || !obj['p2email'] || !obj['p3email'] ||
-	    (obj['p4handle'] && !obj['p4email'])))
+	    (npl == 4 && !obj['p4email'])))
 		msg = 'Email address is required.';
 
 	if (msg) {
@@ -123,4 +132,14 @@ function makeRequest(method, path, args, callback)
 	}
 
 	$.ajax(options);
+}
+
+function kNpChanged()
+{
+	if ($('#np3')[0].checked) {
+		$('#p4handle, #p4email').prop('disabled', true);
+		$('#p4handle, #p4email').val('');
+	} else {
+		$('#p4handle, #p4email').prop('disabled', false);
+	}
 }
