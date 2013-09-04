@@ -1,6 +1,6 @@
 {
 	"local_dir": "/Users/dap/Desktop/KartPending/upload",
-	"manta_dir": "/manta/public/kartlytics-test",
+	"manta_dir": "/manta/public/kartlytics/test-videos",
 	"match_filenames": [
 		".*\\.mov.json$",
 		".*\\.mov"

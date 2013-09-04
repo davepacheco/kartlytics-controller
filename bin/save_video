@@ -5,5 +5,5 @@ if [[ $# -ne 2 ]]; then
 	exit 1
 fi
 
-ffmpeg -i "$1" -b:v 2584k -g 5 "$1.small.mov" && \
+ffmpeg -i "$1" -b:v 3584k -g 5 -strict -2 "$1.small.mov" && \
     rm -f "$1" && mv "$1.small.mov" "$2"
