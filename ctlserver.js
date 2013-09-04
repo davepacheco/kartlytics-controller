@@ -3,16 +3,11 @@
  * web page:
  *   - add option for CC level
  *   - add option for # of players?
- *   - add option to make email required
- *   - add better feedback around current state and allowable button clicks
- *   - improve styling of the buttons
- *   - provide error feedback
  *   - add log of recent events?
  * server:
- *   - remaining states that are hard to detect or get out of:
- *     - "stuck" state resulting from two "stops"
- *     - iGrabber not open at all (start/stop opens it in a non-functional
- *       state)
+ *   - add "bus reset" option
+ *   - figure out how to detect and recover from state where iGrabber is not
+ *     really open
  *   - make it bulletproof w.r.t. all possible states
  *   - trigger upload (at most once)
  */
@@ -139,8 +134,8 @@ function getState(req, res, next)
 {
 	var onstate = function (err, newstate) {
 		req.igState = newstate;
-		if (!err && newstate == 'stuck')
-			err = new Error('state is "stuck"');
+		if (!err && (newstate == 'stuck' || newstate == 'not ready'))
+			err = new Error('bad state: ' + newstate);
 		next(err);
 	};
 
@@ -334,6 +329,11 @@ function doFetchState()
 
 		if (/Your movie has been recorded./.test(stdout)) {
 			ondone(null, 'stuck');
+			return;
+		}
+
+		if (!/iGrabber Capture/.test(stdout)) {
+			ondone(null, 'not ready');
 			return;
 		}
 

@@ -18,11 +18,21 @@ div.kButtons {
 }
 
 #kButtonStart {
-	background-color: #00cc00;
+	background-color: #C2F0C2;
+	color: #006B00;
+	border-color: 1px #006B00 solid;
+	border-radius: 3px;
+}
+
+#kButtonStart:disabled,
+#kButtonStop:disabled {
+	color: #aaaaaa;
 }
 
 #kButtonStop {
-	background-color: #cc0000;
+	background-color: #FFC2C2;
+	color: #A30000;
+	border-color: 1px #A30000 solid;
 }
 
 #kButtonClear {
@@ -39,8 +49,20 @@ input[type=button] {
 	padding-right: 20px;
 	font-size: large;
 	margin-right: 10px;
+	border-radius: 5px;
 }
 
 .kStatusBox {
 	margin: 20px;
+}
+
+.kError {
+	background-color: #FFC2C2;
+	border: 1px #A30000 solid;
+	width: 80%;
+	margin: 20px;
+	padding: 15px;
+	border-radius: 3px;
+	color: #A30000;
+	display: none;
 }
