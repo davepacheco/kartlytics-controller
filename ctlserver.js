@@ -7,7 +7,6 @@
  *     - detect and recover from accidentally opening it in its non-functional
  *       state?
  *   - make it bulletproof w.r.t. all possible states
- *   - trigger upload (at most once)
  */
 
 var mod_child = require('child_process');
