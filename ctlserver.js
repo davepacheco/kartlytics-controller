@@ -3,7 +3,6 @@
  * web page:
  *   - add option for CC level
  *   - add option for # of players?
- *   - add log of recent events?
  * server:
  *   - add "bus reset" option
  *   - figure out how to detect and recover from state where iGrabber is not
@@ -30,6 +29,7 @@ var base = mod_path.join(process.env['HOME'], 'Desktop/KartPending');
 var tmpdir = mod_path.join(base, 'incoming');
 var finaldir = mod_path.join(base, 'upload');
 var port = 8313;
+var ulogevents = [];
 
 /*
  * Global state
@@ -85,6 +85,7 @@ function main()
 	});
 	server.listen(port, '127.0.0.1', function () {
 		log.info('server listening on port', port);
+		ulog('Backend ready.');
 	});
 	server.on('uncaughtException',
 	    function (_1, _2, _3, err) { throw (err); });
@@ -146,7 +147,7 @@ function getState(req, res, next)
 
 function state(req, res, next)
 {
-	res.send(200, req.igState);
+	res.send(200, { 'state': req.igState, 'ulog': ulogevents });
 	next();
 }
 
@@ -204,6 +205,7 @@ function doStart(req, res, next)
 			return;
 		}
 
+		ulog('Started recording race.');
 		currentFile = filebase;
 		next();
 	});
@@ -265,6 +267,7 @@ function stop(req, res, next)
 		},
 		function (_, callback) {
 			callback();
+			ulog('Stopped recording race.');
 			if (currentFile === undefined)
 				return;
 
@@ -339,6 +342,15 @@ function doFetchState()
 
 		ondone(null, 'idle');
 	});
+}
+
+
+function ulog()
+{
+	var args = Array.prototype.slice.call(arguments);
+	var msg = mod_util.format.apply(null, args);
+	ulogevents.unshift([ Date.now(), msg ]);
+	ulogevents = ulogevents.slice(0, 10);
 }
 
 main();

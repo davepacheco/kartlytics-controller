@@ -66,3 +66,16 @@ input[type=button] {
 	color: #A30000;
 	display: none;
 }
+
+.kLog td.kLogWhen {
+	width: 50px;
+	white-space: nowrap;
+	font-weight: bold;
+	font-size: small;
+}
+
+.kLog td.kLogMessage {
+	width: 450px;
+	white-space: nowrap;
+	font-size: small;
+}

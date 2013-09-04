@@ -1,7 +1,7 @@
 var url = 'http://localhost:8313';
 
 var kTickInterval = 5000;
-var kEmailRequired = true;
+var kEmailRequired = false;
 
 window.onload = kRefreshState;
 
@@ -45,6 +45,18 @@ function kLoadState(data)
 	}
 }
 
+function kLoadLog(elts)
+{
+	var html =
+	    '<table class="kLog">' +
+	    elts.map(function (entry) {
+		return ('<tr><td class="kLogWhen">' +
+		    new Date(entry[0]).toLocaleTimeString() +
+		    '</td><td class="kLogMessage">' + entry[1] + '</td></tr>');
+	    }).join('\n') + '</table>';
+	$('#kLog').html(html);
+}
+
 function kReset()
 {
 	$('input[type=text]').val('');
@@ -85,7 +97,8 @@ function makeRequest(method, path, args, callback)
 	    'method': method,
 	    'dataType': 'json',
 	    'success': function (data) {
-		kLoadState(data);
+		kLoadState(data['state']);
+		kLoadLog(data['ulog']);
 		if (callback)
 			callback();
 	    },
