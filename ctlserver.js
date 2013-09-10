@@ -78,7 +78,7 @@ function main()
 	    cmnHeaders, lock, getState, start, getState, state);
 	server.on('after', unlock);
 	server.on('after', function (req, res) {
-		log.info({
+		log.debug({
 		    'method': req.method,
 		    'url': req.url,
 		    'statusCode': res.statusCode
@@ -198,6 +198,7 @@ function doStart(req, res, next)
 	var rawjsonfilename = mod_path.join(rawdir, filebase + '.raw.json');
 	var translated = prepareJson(filebase, req.body);
 
+	log.info('starting recording', filename);
 	mod_fs.writeFileSync(rawjsonfilename, JSON.stringify(req.body));
 	mod_fs.writeFileSync(jsonfilename, JSON.stringify(translated));
 	doCmd('./bin/start_recording ' + filename, function (err) {
@@ -264,6 +265,7 @@ function stop(req, res, next)
 	orig = mod_path.join(tmpdir, currentFile);
 	fin = mod_path.join(finaldir, currentFile);
 
+	log.info('stopping recording', filename);
 	mod_vasync.pipeline({
 	    'funcs': [
 		function (_, callback) {
